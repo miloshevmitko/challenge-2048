@@ -1,0 +1,16 @@
+{
+  "name": "@mitko-miloshev/2048",
+  "version": "1.0.0",
+  "description": "Simplified version of the popular game 2048",
+  "license": "ISC",
+  "author": "Mitko Miloshev <miloshev.mitko@gmail.com>",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vite": "7.3.0"
+  }
+}
