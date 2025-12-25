@@ -1,4 +1,8 @@
+import { GameStatus } from "../common/game-status";
 import { type IGameBoard } from "../models/game-board";
+
+// FIXME: The GameRenderer assumes the provided gameBoardEl has the correct
+// styles applied instead of applying them through the class.
 
 /**
  * Responsible for rendering the game board into the DOM.
@@ -18,12 +22,23 @@ export interface IGameRenderer {
    * @param {IGameBoard} board - The game board instance to render.
    */
   renderBoard(board: IGameBoard): void;
+
+  /**
+   * Renders a game status message into the message board element.
+   * Clears any existing content and displays a message based on the
+   * provided game status.
+   * 
+   * @param {GameStatus} status - The current game status to display.
+   */
+  renderMessage(status: GameStatus): void;
 }
 
 export class GameRenderer implements IGameRenderer {
   #classNames = {
     gameBoardGridCell: "cell",
     gamePiece: "game-piece",
+    messageBoardGameWon: "game-won",
+    messageBoardGameLost: "game-lost",
   };
 
   /**
@@ -33,14 +48,20 @@ export class GameRenderer implements IGameRenderer {
    */
   #gameBoardEl: HTMLElement | null;
 
+  #messageBoardEl: HTMLElement | null;
+
   /**
    * Creates a new renderer instance.
    *
    * @param {HTMLElement|null} gameBoardEl - The container element in which the game board
    * will be rendered. If `null`, rendering will be skipped.
    */
-  constructor(gameBoardEl: HTMLElement | null) {
+  constructor(
+    gameBoardEl: HTMLElement | null,
+    messageBoardEl: HTMLElement | null
+  ) {
     this.#gameBoardEl = gameBoardEl;
+    this.#messageBoardEl = messageBoardEl;
   }
 
   renderBoard(board: IGameBoard) {
@@ -67,6 +88,20 @@ export class GameRenderer implements IGameRenderer {
 
         this.#gameBoardEl.appendChild(cellEl);
       }
+    }
+  }
+
+  renderMessage(status: GameStatus) {
+    if (!this.#messageBoardEl) return;
+
+    this.#messageBoardEl.innerHTML = "";
+
+    if (status === GameStatus.Lost) {
+      this.#messageBoardEl.innerText = "You Lost!";
+      this.#messageBoardEl.classList.add(this.#classNames.messageBoardGameLost);
+    } else if (status === GameStatus.Won) {
+      this.#messageBoardEl.innerText = "You Won!";
+      this.#messageBoardEl.classList.add(this.#classNames.messageBoardGameWon);
     }
   }
 }

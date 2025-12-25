@@ -12,6 +12,10 @@ body {
     font-family: Arial, sans-serif;
 }
 
+#board-wrapper {
+    position: relative;
+}
+
 #game-board {
     display: grid;
     grid-template-columns: repeat(var(--grid-size), 100px);
@@ -19,6 +23,28 @@ body {
     padding: 10px;
     background: #bbada0;
     border-radius: 10px;
+}
+
+#message-board {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 48px;
+    color: black;
+    border-radius: 10px;
+}
+
+#message-board.game-lost {
+    background: rgb(255, 0, 0, 0.3);
+}
+
+#message-board.game-won {
+    background: rgb(0, 255, 0, 0.3);
 }
 
 .cell {

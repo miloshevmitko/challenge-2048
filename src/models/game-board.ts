@@ -70,6 +70,18 @@ export interface IGameBoard {
    * @returns {boolean} True if the coordinate is within bounds, false otherwise.
    */
   isValidGridCoordinate(coordinate: GridCoordinate): boolean;
+
+  /**
+   * Determines whether there are any valid moves left on the board.
+   *
+   * A move is considered valid if:
+   * - At least one cell is empty (`null`), allowing a new piece to be placed.
+   * - Or, at least one adjacent cell (horizontally or vertically) contains
+   *   the same value, meaning two pieces can be merged.
+   *
+   * @returns {boolean} `true` if there are valid moves available, otherwise `false`.
+   */
+  hasValidMoves(): boolean;
 }
 
 export class GameBoard implements IGameBoard {
@@ -153,5 +165,32 @@ export class GameBoard implements IGameBoard {
       coordinate.columnIndex >= 0 &&
       coordinate.columnIndex < this.#size
     );
+  }
+
+  hasValidMoves(): boolean {
+    let validMoveFound = false;
+    const lastIndex = this.#size - 1;
+
+    for (let rowIndex = 0; rowIndex < this.#size; rowIndex += 1) {
+      const row = this.#grid[rowIndex];
+
+      for (let columnIndex = 0; columnIndex < this.#size; columnIndex += 1) {
+        if (row[columnIndex] === null) {
+          validMoveFound = true;
+        } else if (
+          (columnIndex < lastIndex && row[columnIndex] === row[columnIndex + 1]) ||
+          (rowIndex < lastIndex &&
+            row[columnIndex] === this.#grid[rowIndex + 1][columnIndex])
+        ) {
+          validMoveFound = true;
+        }
+
+        if (validMoveFound) {
+          break;
+        }
+      }
+    }
+
+    return validMoveFound;
   }
 }

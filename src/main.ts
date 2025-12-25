@@ -7,7 +7,10 @@ import config from "./configs";
 const controller = new GameController(
   new GameBoard(config.gameBoardGridSize),
   new DefaultGamePieceFactory(),
-  new GameRenderer(document.getElementById(config.gameBoardId)!),
+  new GameRenderer(
+    document.getElementById(config.gameBoardId),
+    document.getElementById(config.messageBoardId)
+  ),
   {
     gameWinValue: config.gameWinValue,
     startingPieceCount: config.startingPieceCount,

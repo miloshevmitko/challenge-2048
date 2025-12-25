@@ -2,6 +2,7 @@ import { type IGameBoard, type GridCoordinate } from "../models/game-board";
 import { type IGamePiece } from "../models/game-piece";
 import { type IGamePieceFactory } from "../factories/game-piece-factory";
 import type { IGameRenderer } from "../renderers/game-renderer";
+import { GameStatus } from "../common/game-status";
 
 enum MoveDirection {
   Down,
@@ -12,6 +13,8 @@ enum MoveDirection {
 
 export class GameController {
   #boundOnArrowKeyDown: (event: KeyboardEvent) => void;
+
+  #status: GameStatus | null = null;
 
   constructor(
     private readonly board: IGameBoard,
@@ -26,9 +29,13 @@ export class GameController {
   }
 
   startGame() {
-      this.#placeNewPieces(this.config.startingPieceCount);
-      this.renderer.renderBoard(this.board);
-      document.addEventListener("keydown", this.#boundOnArrowKeyDown);
+    if (this.#status === GameStatus.InProgress) {
+      throw new Error("Game already started.");
+    }
+
+    this.#placeNewPieces(this.config.startingPieceCount);
+    this.renderer.renderBoard(this.board);
+    document.addEventListener("keydown", this.#boundOnArrowKeyDown);
   }
 
   #placeNewPieces(count: number) {
@@ -62,6 +69,15 @@ export class GameController {
       if (hasMoved) {
         this.#placeNewPieces(1);
         this.renderer.renderBoard(this.board);
+        
+        if (!this.board.hasValidMoves()) {
+          this.#status = GameStatus.Lost;
+        }
+
+        if (this.#status === GameStatus.Won || this.#status === GameStatus.Lost) {
+          document.removeEventListener("keydown", this.#boundOnArrowKeyDown);
+          this.renderer.renderMessage(this.#status);
+        }
       }
     }
   }
@@ -89,6 +105,10 @@ export class GameController {
           mergedPiece,
           updateInstruction.nextCoordinate!
         );
+
+        if (mergedPiece.value === this.config.gameWinValue) {
+          this.#status = GameStatus.Won;
+        }
 
         hasMoved = true;
       } else if (updateInstruction.nextCoordinate) {
