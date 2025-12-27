@@ -1,4 +1,4 @@
-import { GamePiece, type IGamePiece } from "./game-piece";
+import { type IGamePiece } from "./game-piece";
 import { cryptoRandomInt } from "../common/crypto-random-int";
 import { ShiftDirection } from "../common/shift-direction";
 
@@ -75,10 +75,10 @@ export interface IGameBoard {
    * Finds and returns the game piece with the highest value on the board.
    * If the board is empty, the method returns `null`.
    *
-   * @returns {GamePiece|null} The game piece with the highest value,
+   * @returns {IGamePiece|null} The game piece with the highest value,
    * or `null` if no pieces are present on the board.
    */
-  findMaxValueGamePiece(): GamePiece | null;
+  findMaxValueGamePiece(): IGamePiece | null;
 
   /**
    * Checks whether a coordinate is valid within the bounds of the board.
@@ -191,8 +191,8 @@ export class GameBoard implements IGameBoard {
     return this.#grid[coordinate.rowIndex][coordinate.columnIndex];
   }
 
-  findMaxValueGamePiece(): GamePiece | null {
-    let maxValueGamePiece: GamePiece | null = null;
+  findMaxValueGamePiece(): IGamePiece | null {
+    let maxValueGamePiece: IGamePiece | null = null;
 
     for (const row of this.#grid) {
       for (const gamePiece of row) {
