@@ -12,6 +12,16 @@ body {
     font-family: Arial, sans-serif;
 }
 
+.btn {
+    line-height: 36px;
+}
+
+#controls {
+    display: flex;
+    justify-content: space-evenly;
+    margin: 32px;
+}
+
 #board-wrapper {
     position: relative;
 }

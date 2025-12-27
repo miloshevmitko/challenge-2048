@@ -3,4 +3,5 @@ export default {
   gameBoardId: import.meta.env.VITE_GAME_BOARD_ID,
   gameWinValue: parseInt(import.meta.env.VITE_GAME_WIN_VALUE),
   messageBoardId: import.meta.env.VITE_MESSAGE_BOARD_ID,
+  gameAgentSearchDepth: parseInt(import.meta.env.VITE_GAME_AGENT_SEARCH_DEPTH),
 };

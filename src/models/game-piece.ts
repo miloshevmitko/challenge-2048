@@ -15,6 +15,11 @@ export interface IGamePiece {
    * Used when two pieces of the same value merge during gameplay.
    */
   upgrade(): void;
+
+  /**
+   * Creates a deep clone of this game piece.
+   */
+  clone(): IGamePiece
 }
 
 export class GamePiece implements IGamePiece {
@@ -34,5 +39,9 @@ export class GamePiece implements IGamePiece {
 
   upgrade() {
     this.value = this.value * 2;
+  }
+
+  clone(): IGamePiece {
+    return new GamePiece(this.value);
   }
 }

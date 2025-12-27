@@ -115,6 +115,11 @@ export interface IGameBoard {
    * otherwise `false`.
    */
   shift(direction: ShiftDirection): boolean;
+
+  /**
+   * Creates a deep clone of the current game board instance.
+   */
+  clone(): IGameBoard;
 }
 
 export class GameBoard implements IGameBoard {
@@ -341,6 +346,25 @@ export class GameBoard implements IGameBoard {
       nextCoordinate,
       mergeRequired,
     };
+  }
+
+  clone(): IGameBoard {
+    const clonedBoard = new GameBoard(this.#size);
+
+    for (let rowIndex = 0; rowIndex < this.#size; rowIndex += 1) {
+      for (let columnIndex = 0; columnIndex < this.#size; columnIndex += 1) {
+        const piece = this.#grid[rowIndex][columnIndex];
+
+        if (piece) {
+          clonedBoard.placeGamePiece(piece.clone(), {
+            rowIndex,
+            columnIndex,
+          });
+        }
+      }
+    }
+
+    return clonedBoard;
   }
 
   static updateCoordinateByDirection(
