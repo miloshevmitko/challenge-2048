@@ -9,6 +9,12 @@ export interface IGamePiece {
    * @type {number}
    */
   value: number;
+
+  /**
+   * Doubles the current value of the game piece.
+   * Used when two pieces of the same value merge during gameplay.
+   */
+  upgrade(): void;
 }
 
 export class GamePiece implements IGamePiece {
@@ -24,5 +30,9 @@ export class GamePiece implements IGamePiece {
    */
   constructor(value?: number) {
     this.value = value ?? (cryptoRandom() < 0.9 ? 2 : 4);
+  }
+
+  upgrade() {
+    this.value = this.value * 2;
   }
 }

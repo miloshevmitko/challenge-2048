@@ -1,5 +1,6 @@
-import { type IGamePiece } from "./game-piece";
+import { GamePiece, type IGamePiece } from "./game-piece";
 import { cryptoRandomInt } from "../common/crypto-random-int";
+import { ShiftDirection } from "../common/shift-direction";
 
 /**
  * Indicates the position of a cell in the GameBoard grid.
@@ -26,6 +27,12 @@ export interface IGameBoard {
    * @returns {number} The number of rows/columns in the board.
    */
   getSize(): number;
+
+  /**
+   * Retrieves all empty positions on the board.
+   * @returns {GridCoordinate[]} An array of all empty coordinates.
+   */
+  getEmptyCoordinates(): GridCoordinate[];
 
   /**
    * Retrieves a random selection of empty positions on the board.
@@ -65,6 +72,15 @@ export interface IGameBoard {
   getGamePieceByCoordinate(coordinate: GridCoordinate): IGamePiece | null;
 
   /**
+   * Finds and returns the game piece with the highest value on the board.
+   * If the board is empty, the method returns `null`.
+   *
+   * @returns {GamePiece|null} The game piece with the highest value,
+   * or `null` if no pieces are present on the board.
+   */
+  findMaxValueGamePiece(): GamePiece | null;
+
+  /**
    * Checks whether a coordinate is valid within the bounds of the board.
    * @param {GridCoordinate} coordinate - The coordinate to validate.
    * @returns {boolean} True if the coordinate is within bounds, false otherwise.
@@ -82,6 +98,23 @@ export interface IGameBoard {
    * @returns {boolean} `true` if there are valid moves available, otherwise `false`.
    */
   hasValidMoves(): boolean;
+
+  /**
+   * Shifts all game pieces on the board in the specified direction.
+   * Pieces are moved sequentially according to an access order determined
+   * by the direction of the shift. During the shift:
+   *
+   * - Empty cells are skipped.
+   * - Pieces are moved as far as possible in the given direction.
+   * - If a piece encounters another piece of the same value, a merge occurs:
+   *   the source piece is removed and the target piece is upgraded (its value doubled).
+   *
+   * @param {ShiftDirection} direction - The direction in which to shift the board
+   * (e.g., up, down, left, right).
+   * @returns {boolean} `true` if at least one piece was moved or merged,
+   * otherwise `false`.
+   */
+  shift(direction: ShiftDirection): boolean;
 }
 
 export class GameBoard implements IGameBoard {
@@ -108,7 +141,7 @@ export class GameBoard implements IGameBoard {
     return this.#size;
   }
 
-  #getEmptyCoordinates() {
+  getEmptyCoordinates() {
     const coordinates: GridCoordinate[] = [];
 
     for (let rowIndex = 0; rowIndex < this.#grid.length; rowIndex += 1) {
@@ -125,7 +158,7 @@ export class GameBoard implements IGameBoard {
   }
 
   getRandomEmptyCoordinates(count: number): GridCoordinate[] {
-    const coordinates = this.#getEmptyCoordinates();
+    const coordinates = this.getEmptyCoordinates();
     const randomCoordinates: GridCoordinate[] = [];
 
     while (randomCoordinates.length < Math.min(count, coordinates.length)) {
@@ -158,6 +191,23 @@ export class GameBoard implements IGameBoard {
     return this.#grid[coordinate.rowIndex][coordinate.columnIndex];
   }
 
+  findMaxValueGamePiece(): GamePiece | null {
+    let maxValueGamePiece: GamePiece | null = null;
+
+    for (const row of this.#grid) {
+      for (const gamePiece of row) {
+        if (
+          gamePiece &&
+          (!maxValueGamePiece || gamePiece.value > maxValueGamePiece.value)
+        ) {
+          maxValueGamePiece = gamePiece;
+        }
+      }
+    }
+
+    return maxValueGamePiece;
+  }
+
   isValidGridCoordinate(coordinate: GridCoordinate): boolean {
     return (
       coordinate.rowIndex >= 0 &&
@@ -178,9 +228,11 @@ export class GameBoard implements IGameBoard {
         if (row[columnIndex] === null) {
           validMoveFound = true;
         } else if (
-          (columnIndex < lastIndex && row[columnIndex] === row[columnIndex + 1]) ||
+          (columnIndex < lastIndex &&
+            row[columnIndex]?.value === row[columnIndex + 1]?.value) ||
           (rowIndex < lastIndex &&
-            row[columnIndex] === this.#grid[rowIndex + 1][columnIndex])
+            row[columnIndex]?.value ===
+              this.#grid[rowIndex + 1][columnIndex]?.value)
         ) {
           validMoveFound = true;
         }
@@ -192,5 +244,120 @@ export class GameBoard implements IGameBoard {
     }
 
     return validMoveFound;
+  }
+
+  shift(direction: ShiftDirection): boolean {
+    let hasMoved = false;
+    const accessSequence = this.#getBoardGridAccessSequence(direction);
+
+    for (const coordinate of accessSequence) {
+      const piece = this.getGamePieceByCoordinate(coordinate);
+
+      if (!piece) continue;
+
+      const updateInstruction = this.#getUpdateInstructionForPiece(
+        piece,
+        coordinate,
+        direction
+      );
+
+      if (updateInstruction.nextCoordinate) {
+        if (updateInstruction.mergeRequired) {
+          this.removeGamePiece(coordinate);
+          this.getGamePieceByCoordinate(
+            updateInstruction.nextCoordinate
+          )?.upgrade();
+        } else {
+          this.moveGamePiece(coordinate, updateInstruction.nextCoordinate);
+        }
+
+        hasMoved = true;
+      }
+    }
+
+    return hasMoved;
+  }
+
+  #getBoardGridAccessSequence(direction: ShiftDirection) {
+    const maxCoordinate = this.#size - 1;
+    const accessSequence: GridCoordinate[] = [];
+
+    for (let rowIndex = 0; rowIndex <= maxCoordinate; rowIndex += 1) {
+      for (
+        let columnIndex = 0;
+        columnIndex <= maxCoordinate;
+        columnIndex += 1
+      ) {
+        accessSequence.push({
+          rowIndex:
+            direction === ShiftDirection.Down
+              ? maxCoordinate - rowIndex
+              : rowIndex,
+          columnIndex:
+            direction === ShiftDirection.Right
+              ? maxCoordinate - columnIndex
+              : columnIndex,
+        });
+      }
+    }
+
+    return accessSequence;
+  }
+
+  #getUpdateInstructionForPiece(
+    piece: IGamePiece,
+    currentCoordinate: GridCoordinate,
+    direction: ShiftDirection
+  ) {
+    let nextCoordinate: GridCoordinate | null = null;
+    let mergeRequired = false;
+    let keepSearching = true;
+
+    while (keepSearching) {
+      const candidateCoordinate = GameBoard.updateCoordinateByDirection(
+        nextCoordinate ?? currentCoordinate,
+        direction
+      );
+
+      if (this.isValidGridCoordinate(candidateCoordinate)) {
+        const candidateCoordinatePiece =
+          this.getGamePieceByCoordinate(candidateCoordinate);
+
+        if (candidateCoordinatePiece === null) {
+          nextCoordinate = candidateCoordinate;
+          continue;
+        }
+
+        if (candidateCoordinatePiece.value === piece.value) {
+          nextCoordinate = candidateCoordinate;
+          mergeRequired = true;
+        }
+      }
+
+      keepSearching = false;
+    }
+
+    return {
+      nextCoordinate,
+      mergeRequired,
+    };
+  }
+
+  static updateCoordinateByDirection(
+    coordinate: GridCoordinate,
+    direction: ShiftDirection
+  ) {
+    switch (direction) {
+      case ShiftDirection.Down:
+        return { ...coordinate, rowIndex: coordinate.rowIndex + 1 };
+      case ShiftDirection.Left:
+        return { ...coordinate, columnIndex: coordinate.columnIndex - 1 };
+      case ShiftDirection.Right:
+        return { ...coordinate, columnIndex: coordinate.columnIndex + 1 };
+      case ShiftDirection.Up:
+        return { ...coordinate, rowIndex: coordinate.rowIndex - 1 };
+      default:
+        return coordinate;
+    }
   }
 }

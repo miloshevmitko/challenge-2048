@@ -1,15 +1,8 @@
-import { type IGameBoard, type GridCoordinate } from "../models/game-board";
-import { type IGamePiece } from "../models/game-piece";
+import { type IGameBoard } from "../models/game-board";
 import { type IGamePieceFactory } from "../factories/game-piece-factory";
-import type { IGameRenderer } from "../renderers/game-renderer";
+import { type IGameRenderer } from "../renderers/game-renderer";
 import { GameStatus } from "../common/game-status";
-
-enum MoveDirection {
-  Down,
-  Left,
-  Right,
-  Up,
-}
+import { ShiftDirection } from "../common/shift-direction";
 
 export class GameController {
   #boundOnArrowKeyDown: (event: KeyboardEvent) => void;
@@ -45,161 +38,47 @@ export class GameController {
   }
 
   #onArrowKeyDown(event: KeyboardEvent) {
-    let direction: MoveDirection | null = null;
+    let direction: ShiftDirection | null = null;
 
     switch (event.key) {
       case "ArrowDown":
-        direction = MoveDirection.Down;
+        direction = ShiftDirection.Down;
         break;
       case "ArrowLeft":
-        direction = MoveDirection.Left;
+        direction = ShiftDirection.Left;
         break;
       case "ArrowRight":
-        direction = MoveDirection.Right;
+        direction = ShiftDirection.Right;
         break;
       case "ArrowUp":
-        direction = MoveDirection.Up;
+        direction = ShiftDirection.Up;
         break;
       default:
         break;
     }
 
     if (direction !== null) {
-      const hasMoved = this.#move(direction);
+      const hasMoved = this.board.shift(direction);
       if (hasMoved) {
         this.#placeNewPieces(1);
         this.renderer.renderBoard(this.board);
-        
-        if (!this.board.hasValidMoves()) {
+
+        if (
+          this.board.findMaxValueGamePiece()?.value === this.config.gameWinValue
+        ) {
+          this.#status = GameStatus.Won;
+        } else if (!this.board.hasValidMoves()) {
           this.#status = GameStatus.Lost;
         }
 
-        if (this.#status === GameStatus.Won || this.#status === GameStatus.Lost) {
+        if (
+          this.#status === GameStatus.Won ||
+          this.#status === GameStatus.Lost
+        ) {
           document.removeEventListener("keydown", this.#boundOnArrowKeyDown);
           this.renderer.renderMessage(this.#status);
         }
       }
-    }
-  }
-
-  #move(direction: MoveDirection) {
-    let hasMoved = false;
-    const accessSequence = this.#getBoardGridAccessSequence(direction);
-
-    for (const coordinate of accessSequence) {
-      const piece = this.board.getGamePieceByCoordinate(coordinate);
-
-      if (!piece) continue;
-
-      const updateInstruction = this.#getUpdateInstructionForPiece(
-        piece,
-        coordinate,
-        direction
-      );
-
-      if (updateInstruction.mergeRequired) {
-        const mergedPiece = this.pieceFactory.createPiece(piece.value * 2);
-
-        this.board.removeGamePiece(coordinate);
-        this.board.placeGamePiece(
-          mergedPiece,
-          updateInstruction.nextCoordinate!
-        );
-
-        if (mergedPiece.value === this.config.gameWinValue) {
-          this.#status = GameStatus.Won;
-        }
-
-        hasMoved = true;
-      } else if (updateInstruction.nextCoordinate) {
-        this.board.moveGamePiece(coordinate, updateInstruction.nextCoordinate);
-        hasMoved = true;
-      }
-    }
-
-    return hasMoved;
-  }
-
-  #getBoardGridAccessSequence(direction: MoveDirection) {
-    const maxCoordinate = this.board.getSize() - 1;
-    const accessSequence: GridCoordinate[] = [];
-
-    for (let rowIndex = 0; rowIndex <= maxCoordinate; rowIndex += 1) {
-      for (
-        let columnIndex = 0;
-        columnIndex <= maxCoordinate;
-        columnIndex += 1
-      ) {
-        accessSequence.push({
-          rowIndex:
-            direction === MoveDirection.Down
-              ? maxCoordinate - rowIndex
-              : rowIndex,
-          columnIndex:
-            direction === MoveDirection.Right
-              ? maxCoordinate - columnIndex
-              : columnIndex,
-        });
-      }
-    }
-
-    return accessSequence;
-  }
-
-  #getUpdateInstructionForPiece(
-    piece: IGamePiece,
-    currentCoordinate: GridCoordinate,
-    direction: MoveDirection
-  ) {
-    let nextCoordinate: GridCoordinate | null = null;
-    let mergeRequired = false;
-    let keepSearching = true;
-
-    while (keepSearching) {
-      const candidateCoordinate = this.#updateCoordinateByDirection(
-        nextCoordinate ?? currentCoordinate,
-        direction
-      );
-
-      if (this.board.isValidGridCoordinate(candidateCoordinate)) {
-        const candidateCoordinatePiece =
-          this.board.getGamePieceByCoordinate(candidateCoordinate);
-
-        if (candidateCoordinatePiece === null) {
-          nextCoordinate = candidateCoordinate;
-          continue;
-        }
-
-        if (candidateCoordinatePiece.value === piece.value) {
-          nextCoordinate = candidateCoordinate;
-          mergeRequired = true;
-        }
-      }
-
-      keepSearching = false;
-    }
-
-    return {
-      nextCoordinate,
-      mergeRequired,
-    };
-  }
-
-  #updateCoordinateByDirection(
-    coordinate: GridCoordinate,
-    direction: MoveDirection
-  ) {
-    switch (direction) {
-      case MoveDirection.Down:
-        return { ...coordinate, rowIndex: coordinate.rowIndex + 1 };
-      case MoveDirection.Left:
-        return { ...coordinate, columnIndex: coordinate.columnIndex - 1 };
-      case MoveDirection.Right:
-        return { ...coordinate, columnIndex: coordinate.columnIndex + 1 };
-      case MoveDirection.Up:
-        return { ...coordinate, rowIndex: coordinate.rowIndex - 1 };
-      default:
-        return coordinate;
     }
   }
 }
