@@ -62,3 +62,10 @@ npm run test:unit
 
 npm run test:integration
 ```
+
+### Technical Debt and Known Issues
+
+- Contracts are located in the same files as the implementations for simplicity.
+- Negative scenarios are not tested and e2e tests are missing.
+- Shifting in some directions is possible to do more than a single merge per line. Suspected the difference is because of the result returned from `getBoardGridAccessSequence`.
+- Tranisiton effect on shift.
