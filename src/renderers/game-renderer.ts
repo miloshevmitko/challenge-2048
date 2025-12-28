@@ -74,10 +74,11 @@ export class GameRenderer implements IGameRenderer {
       board.getSize().toString()
     );
 
-    for (const row of board.getGrid()) {
-      for (const gamePiece of row) {
+    for (const [rowIndex, row] of board.getGrid().entries()) {
+      for (const [columnIndex, gamePiece] of row.entries()) {
         const cellEl = document.createElement("div");
         cellEl.classList.add(this.#classNames.gameBoardGridCell);
+        cellEl.setAttribute("data-coordinates", `${rowIndex},${columnIndex}`);
 
         if (gamePiece) {
           const gamePieceEl = document.createElement("div");

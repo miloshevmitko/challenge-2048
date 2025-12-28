@@ -4,7 +4,7 @@
     "outDir": "./dist",
     "module": "esnext",
     "target": "esnext",
-    "types": [],
+    "types": ["jest"],
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
@@ -17,5 +17,6 @@
     "moduleDetection": "force",
     "moduleResolution": "node",
     "skipLibCheck": true,
+    "esModuleInterop": true,
   }
 }
