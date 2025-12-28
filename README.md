@@ -69,3 +69,5 @@ npm run test:integration
 - Negative scenarios are not tested and e2e tests are missing.
 - Shifting in some directions is possible to do more than a single merge per line. Suspected the difference is because of the result returned from `getBoardGridAccessSequence`.
 - Tranisiton effect on shift.
+- Generate the HTML structure programmatically instead of relying on correct configuration.
+- The GameAgent hasn't been tested thoroughly with boards of different sizes (should disable the AI Suggestion button in those cases).
