@@ -1,3 +1,5 @@
+// Credit: https://en.inithtml.com/resources/automatic-2048-solving-algorithm-from-human-strategy-to-expectimax-ai/
+
 import { ShiftDirection } from "../common/shift-direction";
 import { type IGamePieceFactory } from "../factories/game-piece-factory";
 import { type IGameBoard } from "../models/game-board";
